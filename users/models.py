@@ -26,6 +26,7 @@ class Profile(models.Model):
         null=True,
     )
     daily_calorie_goal = models.PositiveIntegerField(default=2000)
+    show_diary_to_friends = models.BooleanField(default=False)
 
     def __str__(self):
         return f'Profile: {self.user.username}'

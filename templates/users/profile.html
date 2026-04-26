@@ -3,10 +3,59 @@
 {% block title %}Профиль{% endblock %}
 
 {% block content %}
-<h1>Профиль пользователя</h1>
+<div class="card shadow-sm">
+    <div class="card-body">
+        <h1 class="h3 mb-3">
+            {% if is_own_profile %}
+                Мой профиль
+            {% else %}
+                Профиль пользователя {{ profile_user.username }}
+            {% endif %}
+        </h1>
 
-<p><strong>Username:</strong> {{ profile_user.username }}</p>
-<p><strong>Email:</strong> {{ profile_user.email }}</p>
-<p><strong>Дневная норма калорий:</strong> {{ profile_user.profile.daily_calorie_goal }}</p>
-<p><a href="{% url 'edit_profile' %}">Редактировать профиль</a></p>
+        <p><strong>Username:</strong> {{ profile_user.username }}</p>
+        <p><strong>Email:</strong> {{ profile_user.email }}</p>
+        <p><strong>Дневная норма калорий:</strong> {{ profile_user.profile.daily_calorie_goal }}</p>
+        {% if profile_user.profile.bio %}
+            <p><strong>О себе:</strong> {{ profile_user.profile.bio }}</p>
+        {% endif %}
+
+        {% if is_own_profile %}
+            <p><strong>Приватность дневника:</strong>
+                {% if profile_user.profile.show_diary_to_friends %}
+                    дневник виден друзьям
+                {% else %}
+                    дневник скрыт от других пользователей
+                {% endif %}
+            </p>
+            <a class="btn btn-dark" href="{% url 'edit_profile' %}">Редактировать профиль</a>
+        {% else %}
+            {% if is_friend %}
+                <p class="text-success">Вы уже друзья.</p>
+                <form method="post" action="{% url 'remove_friend' profile_user.id %}" class="mb-3">
+                    {% csrf_token %}
+                    <button class="btn btn-outline-danger" type="submit">Удалить из друзей</button>
+                </form>
+            {% elif outgoing_request_sent %}
+                <p class="text-muted">Заявка в друзья уже отправлена.</p>
+            {% else %}
+                <form method="post" action="{% url 'add_friend' profile_user.id %}" class="mb-3">
+                    {% csrf_token %}
+                    <button class="btn btn-dark" type="submit">Добавить в друзья</button>
+                </form>
+            {% endif %}
+
+            {% if can_view_diary_info %}
+                <div class="alert alert-success mb-0">
+                    Этот пользователь разрешил друзьям видеть дневник.
+                    Сам дневник и статистика будут добавлены в модуле дневника.
+                </div>
+            {% else %}
+                <div class="alert alert-secondary mb-0">
+                    Дневник и статистика сейчас недоступны для просмотра.
+                </div>
+            {% endif %}
+        {% endif %}
+    </div>
+</div>
 {% endblock %}

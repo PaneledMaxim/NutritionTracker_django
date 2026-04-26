@@ -3,13 +3,29 @@
 {% block title %}Друзья{% endblock %}
 
 {% block content %}
-<h1>Список друзей</h1>
+<h1 class="h3 mb-3">Список друзей</h1>
 
-<ul>
+<div class="row g-3">
     {% for friend in friends %}
-        <li>{{ friend.username }} — {{ friend.email }}</li>
+        <div class="col-md-6">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h2 class="h5">{{ friend.username }}</h2>
+                    <p class="text-muted">{{ friend.email }}</p>
+                    <div class="d-flex gap-2">
+                        <a class="btn btn-outline-dark btn-sm" href="{% url 'user_profile' friend.username %}">Перейти в профиль</a>
+                        <form method="post" action="{% url 'remove_friend' friend.id %}">
+                            {% csrf_token %}
+                            <button class="btn btn-outline-danger btn-sm" type="submit">Удалить из друзей</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
     {% empty %}
-        <li>У вас пока нет друзей.</li>
+        <div class="col-12">
+            <div class="alert alert-light border">У вас пока нет друзей.</div>
+        </div>
     {% endfor %}
-</ul>
+</div>
 {% endblock %}

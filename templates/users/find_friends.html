@@ -3,32 +3,44 @@
 {% block title %}Поиск друзей{% endblock %}
 
 {% block content %}
-<h1>Поиск пользователей</h1>
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3 mb-0">Поиск пользователей</h1>
+</div>
 
-<form method="get">
-    <input type="text" name="q" value="{{ query }}" placeholder="Введите username или email">
-    <button type="submit">Найти</button>
+<form method="get" class="row g-2 mb-4">
+    <div class="col-md-8">
+        <input class="form-control" type="text" name="q" value="{{ query }}" placeholder="Поиск по username">
+    </div>
+    <div class="col-md-auto">
+        <button class="btn btn-dark" type="submit">Найти</button>
+    </div>
 </form>
 
-{% if query %}
-    <ul>
-        {% for user_item in users %}
-            <li>
-                {{ user_item.username }} ({{ user_item.email }})
-                {% if user_item.id in sent_request_ids %}
-                    — заявка уже отправлена
-                {% elif user_item.id in friend_ids %}
-                    — уже в друзьях
-                {% else %}
-                    <form method="post" action="{% url 'add_friend' user_item.id %}">
-                        {% csrf_token %}
-                        <button type="submit">Добавить в друзья</button>
-                    </form>
-                {% endif %}
-            </li>
-        {% empty %}
-            <li>Пользователи не найдены.</li>
-        {% endfor %}
-    </ul>
-{% endif %}
+<div class="row g-3">
+    {% for user_item in users %}
+        <div class="col-md-6">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h2 class="h5">{{ user_item.username }}</h2>
+                    <p class="text-muted mb-3">{{ user_item.email }}</p>
+
+                    {% if user_item.id in sent_request_ids %}
+                        <span class="badge text-bg-secondary">Заявка отправлена</span>
+                    {% elif user_item.id in friend_ids %}
+                        <a class="btn btn-outline-dark btn-sm" href="{% url 'user_profile' user_item.username %}">Перейти в профиль</a>
+                    {% else %}
+                        <form method="post" action="{% url 'add_friend' user_item.id %}">
+                            {% csrf_token %}
+                            <button class="btn btn-dark btn-sm" type="submit">Добавить в друзья</button>
+                        </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    {% empty %}
+        <div class="col-12">
+            <div class="alert alert-light border">Пользователи не найдены.</div>
+        </div>
+    {% endfor %}
+</div>
 {% endblock %}

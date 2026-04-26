@@ -35,13 +35,21 @@ class UserUpdateForm(forms.ModelForm):
 class ProfileUpdateForm(forms.ModelForm):
     class Meta:
         model = Profile
-        fields = ('bio', 'birth_date', 'height_cm', 'weight_kg', 'daily_calorie_goal')
+        fields = (
+            'bio',
+            'birth_date',
+            'height_cm',
+            'weight_kg',
+            'daily_calorie_goal',
+            'show_diary_to_friends',
+        )
         labels = {
             'bio': 'О себе',
             'birth_date': 'Дата рождения',
             'height_cm': 'Рост (см)',
             'weight_kg': 'Вес (кг)',
             'daily_calorie_goal': 'Дневная норма калорий',
+            'show_diary_to_friends': 'Показывать мой дневник другим пользователям',
         }
         widgets = {
             'birth_date': forms.DateInput(attrs={'type': 'date'}),

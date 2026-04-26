@@ -4,7 +4,6 @@
 
 {% block content %}
 <h1>Nutrition Tracker</h1>
-<p>Базовый каркас проекта готов. Дальше команда может расходиться по модулям.</p>
 {% if request.user.is_authenticated %}
 <p>Сейчас в системе: {{ request.user.username }}</p>
 {% else %}

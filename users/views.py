@@ -55,7 +55,42 @@ def logout_view(request):
 
 @login_required
 def profile_view(request):
-    return render(request, 'users/profile.html', {'profile_user': request.user})
+    return render(
+        request,
+        'users/profile.html',
+        {
+            'profile_user': request.user,
+            'is_own_profile': True,
+            'can_view_diary_info': True,
+        },
+    )
+
+
+@login_required
+def user_profile_view(request, username):
+    profile_user = CustomUser.objects.filter(username=username).select_related('profile').first()
+    if profile_user is None:
+        return redirect('find_friends')
+
+    if profile_user == request.user:
+        return redirect('profile')
+
+    is_friend = request.user.friends.filter(pk=profile_user.pk).exists()
+    outgoing_request_sent = FriendRequest.objects.filter(
+        from_user=request.user,
+        to_user=profile_user,
+        status=FriendRequest.STATUS_PENDING,
+    ).exists()
+    can_view_diary_info = profile_user.profile.show_diary_to_friends and is_friend
+
+    context = {
+        'profile_user': profile_user,
+        'is_own_profile': False,
+        'is_friend': is_friend,
+        'outgoing_request_sent': outgoing_request_sent,
+        'can_view_diary_info': can_view_diary_info,
+    }
+    return render(request, 'users/profile.html', context)
 
 
 @login_required
@@ -81,17 +116,10 @@ def edit_profile_view(request):
 @login_required
 def find_friends_view(request):
     query = request.GET.get('q', '').strip()
-    users = CustomUser.objects.exclude(pk=request.user.pk)
+    users = CustomUser.objects.exclude(pk=request.user.pk).order_by('username')
 
     if query:
-        users = users.filter(
-            Q(username__icontains=query)
-            | Q(email__icontains=query)
-            | Q(first_name__icontains=query)
-            | Q(last_name__icontains=query)
-        )
-    else:
-        users = users.none()
+        users = users.filter(username__icontains=query)
 
     sent_request_ids = set(
         FriendRequest.objects.filter(
@@ -130,6 +158,25 @@ def add_friend_view(request, user_id):
     )
     messages.success(request, 'Заявка в друзья отправлена.')
     return redirect('find_friends')
+
+
+@login_required
+def remove_friend_view(request, user_id):
+    if request.method != 'POST':
+        return HttpResponseForbidden('Only POST requests are allowed.')
+
+    friend = CustomUser.objects.filter(pk=user_id).first()
+    if friend is None or friend == request.user:
+        return redirect('friends_list')
+
+    if request.user.friends.filter(pk=friend.pk).exists():
+        request.user.friends.remove(friend)
+        friend.friends.remove(request.user)
+        messages.success(request, 'Пользователь удалён из друзей.')
+    else:
+        messages.info(request, 'Этот пользователь уже не находится у вас в друзьях.')
+
+    return redirect('friends_list')
 
 
 @login_required
