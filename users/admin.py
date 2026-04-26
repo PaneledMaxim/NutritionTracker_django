@@ -16,7 +16,7 @@ class CustomUserAdmin(UserAdmin):
 
 @admin.register(Profile)
 class ProfileAdmin(admin.ModelAdmin):
-    list_display = ('user', 'birth_date', 'height_cm', 'weight_kg')
+    list_display = ('user', 'daily_calorie_goal', 'birth_date', 'height_cm', 'weight_kg')
     search_fields = ('user__username', 'user__email')
 
 # Register your models here.
