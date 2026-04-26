@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block title %}Друзья{% endblock %}
+
+{% block content %}
+<h1>Список друзей</h1>
+
+<ul>
+    {% for friend in friends %}
+        <li>{{ friend.username }} — {{ friend.email }}</li>
+    {% empty %}
+        <li>У вас пока нет друзей.</li>
+    {% endfor %}
+</ul>
+{% endblock %}

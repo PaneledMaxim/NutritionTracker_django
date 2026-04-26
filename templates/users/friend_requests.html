@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}Заявки в друзья{% endblock %}
+
+{% block content %}
+<h1>Входящие заявки</h1>
+
+<ul>
+    {% for friend_request in incoming_requests %}
+        <li>
+            {{ friend_request.from_user.username }} ({{ friend_request.from_user.email }})
+            <form method="post" action="{% url 'respond_friend_request' friend_request.id 'accept' %}">
+                {% csrf_token %}
+                <button type="submit">Принять</button>
+            </form>
+            <form method="post" action="{% url 'respond_friend_request' friend_request.id 'reject' %}">
+                {% csrf_token %}
+                <button type="submit">Отклонить</button>
+            </form>
+        </li>
+    {% empty %}
+        <li>Входящих заявок нет.</li>
+    {% endfor %}
+</ul>
+
+<h2>Исходящие заявки</h2>
+
+<ul>
+    {% for friend_request in outgoing_requests %}
+        <li>{{ friend_request.to_user.username }} ({{ friend_request.to_user.email }})</li>
+    {% empty %}
+        <li>Исходящих заявок нет.</li>
+    {% endfor %}
+</ul>
+{% endblock %}

@@ -14,6 +14,9 @@
             {% if request.user.is_authenticated %}
                 <span>Вы вошли как {{ request.user.username }}</span>
                 <a href="{% url 'profile' %}">Профиль</a>
+                <a href="{% url 'friends_list' %}">Друзья</a>
+                <a href="{% url 'friend_requests' %}">Заявки</a>
+                <a href="{% url 'find_friends' %}">Поиск людей</a>
                 <a href="{% url 'logout' %}">Выход</a>
             {% else %}
                 <a href="{% url 'register' %}">Регистрация</a>
@@ -22,6 +25,13 @@
             <a href="/admin/">Админка</a>
         </nav>
     </header>
+    {% if messages %}
+        <section>
+            {% for message in messages %}
+                <p>{{ message }}</p>
+            {% endfor %}
+        </section>
+    {% endif %}
     <main>
         {% block content %}{% endblock %}
     </main>

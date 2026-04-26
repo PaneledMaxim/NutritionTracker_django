@@ -1,7 +1,11 @@
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.db.models import Q
+from django.http import HttpResponseForbidden
 from django.shortcuts import redirect, render
 
+from .models import CustomUser, FriendRequest
 from .forms import LoginForm, ProfileUpdateForm, RegisterForm, UserUpdateForm
 
 
@@ -72,3 +76,107 @@ def edit_profile_view(request):
         'profile_form': profile_form,
     }
     return render(request, 'users/edit_profile.html', context)
+
+
+@login_required
+def find_friends_view(request):
+    query = request.GET.get('q', '').strip()
+    users = CustomUser.objects.exclude(pk=request.user.pk)
+
+    if query:
+        users = users.filter(
+            Q(username__icontains=query)
+            | Q(email__icontains=query)
+            | Q(first_name__icontains=query)
+            | Q(last_name__icontains=query)
+        )
+    else:
+        users = users.none()
+
+    sent_request_ids = set(
+        FriendRequest.objects.filter(
+            from_user=request.user,
+            status=FriendRequest.STATUS_PENDING,
+        ).values_list('to_user_id', flat=True)
+    )
+    friend_ids = set(request.user.friends.values_list('id', flat=True))
+
+    context = {
+        'users': users,
+        'query': query,
+        'sent_request_ids': sent_request_ids,
+        'friend_ids': friend_ids,
+    }
+    return render(request, 'users/find_friends.html', context)
+
+
+@login_required
+def add_friend_view(request, user_id):
+    if request.method != 'POST':
+        return HttpResponseForbidden('Only POST requests are allowed.')
+
+    to_user = CustomUser.objects.filter(pk=user_id).first()
+    if to_user is None or to_user == request.user:
+        return redirect('find_friends')
+
+    if request.user.friends.filter(pk=to_user.pk).exists():
+        messages.info(request, 'Этот пользователь уже у вас в друзьях.')
+        return redirect('find_friends')
+
+    FriendRequest.objects.get_or_create(
+        from_user=request.user,
+        to_user=to_user,
+        defaults={'status': FriendRequest.STATUS_PENDING},
+    )
+    messages.success(request, 'Заявка в друзья отправлена.')
+    return redirect('find_friends')
+
+
+@login_required
+def friends_list_view(request):
+    friends = request.user.friends.all().order_by('username')
+    return render(request, 'users/friends_list.html', {'friends': friends})
+
+
+@login_required
+def friend_requests_view(request):
+    incoming_requests = FriendRequest.objects.filter(
+        to_user=request.user,
+        status=FriendRequest.STATUS_PENDING,
+    )
+    outgoing_requests = FriendRequest.objects.filter(
+        from_user=request.user,
+        status=FriendRequest.STATUS_PENDING,
+    )
+    context = {
+        'incoming_requests': incoming_requests,
+        'outgoing_requests': outgoing_requests,
+    }
+    return render(request, 'users/friend_requests.html', context)
+
+
+@login_required
+def respond_friend_request_view(request, request_id, action):
+    if request.method != 'POST':
+        return HttpResponseForbidden('Only POST requests are allowed.')
+
+    friend_request = FriendRequest.objects.filter(
+        pk=request_id,
+        to_user=request.user,
+        status=FriendRequest.STATUS_PENDING,
+    ).first()
+
+    if friend_request is None:
+        return redirect('friend_requests')
+
+    if action == 'accept':
+        friend_request.status = FriendRequest.STATUS_ACCEPTED
+        friend_request.save(update_fields=['status'])
+        request.user.friends.add(friend_request.from_user)
+        messages.success(request, 'Заявка принята.')
+    elif action == 'reject':
+        friend_request.status = FriendRequest.STATUS_REJECTED
+        friend_request.save(update_fields=['status'])
+        messages.info(request, 'Заявка отклонена.')
+
+    return redirect('friend_requests')
